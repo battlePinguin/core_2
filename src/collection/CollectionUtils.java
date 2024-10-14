@@ -1,4 +1,4 @@
-import сollectionFilter.Filter;
+package collection;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class CollectionUtils {
 
-    public static <T> T[] filter(T[] array, Filter filter) {
+    public static <T> T[] filter(T[] array, СollectionFilter filter) {
         List<T> result = new ArrayList<>();
 
         for (T element : array) {
