@@ -5,9 +5,16 @@ import concurrency.BlockingQueue;
 import concurrency.ComplexTaskExecutor;
 import concurrency.ConcurrentBank;
 import core.StringBuilderWithUndo;
+import stream.FactorialTask;
+import stream.Order;
+import stream.Student;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) {
@@ -18,13 +25,77 @@ public class Main {
 //        Collection - count of elements
 //        countElements();
 //        Блокирующая очередь
-        produceAndConsumeGenerics();
+//        produceAndConsumeGenerics();
 //        Многопоточный банковский счет
-        transferСoncurrently();
+//        transferСoncurrently();
 //        Синхронизаторы
-        executeTasksWithBarrier();
+//        executeTasksWithBarrier();
+//        Стримы - сортировка заказов
+        groupСountSelectProducts();
+//        Стримы - средняя оценка по предметам
+        calculateAverageGrade();
+//        Стримы - факториал
+        countFactorial();
 
 
+
+
+
+    }
+
+    public static void countFactorial() {
+        int n = 10;
+
+        ForkJoinPool forkJoinPool = new ForkJoinPool();
+        FactorialTask factorialTask = new FactorialTask(n);
+
+        long result = forkJoinPool.invoke(factorialTask);
+
+        System.out.println("Факториал " + n + "! = " + result);
+    }
+    public static void calculateAverageGrade() {
+        List<Student> students = Arrays.asList(
+                new Student("Student1", Map.of("Math", 90, "Physics", 85)),
+                new Student("Student2", Map.of("Math", 95, "Physics", 88)),
+                new Student("Student3", Map.of("Math", 88, "Chemistry", 92)),
+                new Student("Student4", Map.of("Physics", 78, "Chemistry", 85))
+        );
+
+        Map<String, Integer> averageGradesBySubject = students.parallelStream()
+                .flatMap(student -> student.getGrades().entrySet().stream())
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.collectingAndThen(
+                                Collectors.summarizingInt(Map.Entry::getValue),
+                                stats -> (int) (stats.getSum() / stats.getCount())
+                        )
+                ));
+
+        System.out.println("Средняя оценка по предметам:");
+        averageGradesBySubject.forEach((subject, avgGrade) ->
+                System.out.println(subject + ": " + avgGrade));
+    }
+
+    public static void groupСountSelectProducts() {
+        List<Order> orders = List.of(
+                new Order("Laptop", 1200.0),
+                new Order("Smartphone", 800.0),
+                new Order("Laptop", 1500.0),
+                new Order("Tablet", 500.0),
+                new Order("Smartphone", 900.0)
+        );
+
+        Map<String, Double> totalCostByProduct = orders.stream()
+                .collect(Collectors.groupingBy(Order::getProduct, Collectors.summingDouble(Order::getCost)));
+
+        List<Map.Entry<String, Double>> topThreeProducts = totalCostByProduct.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(3)
+                .collect(Collectors.toList());
+
+        System.out.println("Три самых дорогих продукта и их общая стоимость:");
+        topThreeProducts.forEach(entry ->
+                System.out.println("Продукт: " + entry.getKey() + ", Общая стоимость: " + entry.getValue()));
     }
 
     public static void executeTasksWithBarrier() {
